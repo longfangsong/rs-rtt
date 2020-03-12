@@ -15,7 +15,6 @@ extern crate lazy_static;
 extern crate alloc;
 
 use cortex_m::peripheral::syst;
-use cortex_m::register::control::Spsel;
 use cortex_m::{asm, interrupt, register, Peripherals};
 use cortex_m_rt::{entry, exception};
 use cortex_m_semihosting::{debug, hprintln};
@@ -23,10 +22,12 @@ use cortex_m_semihosting::{debug, hprintln};
 mod config;
 mod memory;
 mod thread;
+mod timer;
 
 #[entry]
 fn main() -> ! {
     memory::init();
+    timer::init();
     thread::init();
     loop {
         asm::nop();
@@ -34,4 +35,6 @@ fn main() -> ! {
 }
 
 #[exception]
-unsafe fn SysTick() {}
+unsafe fn SysTick() {
+    hprintln!("SYStick");
+}

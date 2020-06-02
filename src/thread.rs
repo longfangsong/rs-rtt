@@ -1,3 +1,5 @@
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
 use alloc::collections::VecDeque;
 use alloc::sync::Arc;
 use core::alloc::{GlobalAlloc, Layout};
@@ -36,6 +38,15 @@ struct StackFrame {
 
 impl StackFrame {
     fn new(entry: ThreadEntryFunction, param: Address) -> Self {
+        let exception_stack_frame = unsafe {
+            let mut exception_stack_frame: &mut ExceptionFrame =
+                &mut *(alloc::alloc::alloc_zeroed(Layout::new::<ExceptionFrame>())
+                    as *mut ExceptionFrame);
+            exception_stack_frame.set_r0(param);
+            exception_stack_frame.set_pc(entry as *const () as _);
+            exception_stack_frame.set_xpsr(0x01000000);
+            *exception_stack_frame
+        };
         StackFrame {
             r4: 0xdeadbeef,
             r5: 0xdeadbeef,
@@ -45,16 +56,7 @@ impl StackFrame {
             r9: 0xdeadbeef,
             r10: 0xdeadbeef,
             r11: 0xdeadbeef,
-            exception_stack_frame: ExceptionFrame {
-                r0: param as _,
-                r1: 0,
-                r2: 0,
-                r3: 0,
-                r12: 0,
-                lr: 0,
-                pc: entry as *const () as _,
-                xpsr: 0x01000000,
-            },
+            exception_stack_frame,
         }
     }
 }
@@ -144,12 +146,12 @@ static mut CONTEXT_SWITCH_SERVICE: ContextSwitchService = ContextSwitchService {
 #[no_mangle]
 #[inline(never)]
 unsafe extern "C" fn PendSV() {
-    asm!("mrs r3, PRIMASK
+    llvm_asm!("mrs r3, PRIMASK
           cpsid i":::"r3":"volatile");
     // force the compiler generate the code which load
     // switch_from_sp and switch_to_sp
     // inside the critical area
-    asm!("cbz $0, switch_to
+    llvm_asm!("cbz $0, switch_to
           switch_from:
             mrs $0, psp
             stmfd $0!, {r4-r11}
@@ -160,7 +162,7 @@ unsafe extern "C" fn PendSV() {
           orr lr, lr, #0x04"
           : "=r"(CONTEXT_SWITCH_SERVICE.switch_from_sp), "=r"(CONTEXT_SWITCH_SERVICE.switch_to_sp)
           : "r"(CONTEXT_SWITCH_SERVICE.switch_from_sp), "r"(CONTEXT_SWITCH_SERVICE.switch_to_sp)
-          : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "lr", "psp", "memory"
+          : 
           : "volatile");
     // bx lr is auto added
 }

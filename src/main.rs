@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(alloc_error_handler)]
-#![feature(asm)]
+#![feature(llvm_asm)]
 #![feature(naked_functions)]
 // pick a panicking behavior
 //extern crate panic_halt;

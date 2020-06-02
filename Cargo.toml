@@ -6,9 +6,9 @@ name = "rs-rtt"
 version = "0.1.0"
 
 [dependencies]
-cortex-m-rt = "0.6.12"
+cortex-m-rt = {git = "https://github.com/rust-embedded/cortex-m-rt.git"}
 panic-semihosting = "0.5.3"
-alloc-cortex-m = "0.3.5"
+alloc-cortex-m = {git = "https://github.com/bugadani/alloc-cortex-m.git",branch="bugfix/nightly-fix"}
 spin = "0.5.2"
 
 [dependencies.cortex-m]
@@ -16,7 +16,7 @@ version = "0.6.2"
 features = ["inline-asm"]
 
 [dependencies.cortex-m-semihosting]
-version =  "0.3.5"
+git = "https://github.com/rust-embedded/cortex-m-semihosting.git"
 features = ["inline-asm"]
 
 [dependencies.lazy_static]
@@ -33,3 +33,6 @@ bench = false
 codegen-units = 1 # better optimizations
 debug = true # symbols are nice and they don't increase the size on Flash
 lto = true # better optimizations
+
+[patch.crates-io]
+cortex-m = {git="https://github.com/rust-embedded/cortex-m.git"}
